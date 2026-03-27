@@ -48,15 +48,18 @@ def chat():
         messages.append({"role": h["role"], "content": h["content"]})
     messages.append({"role": "user", "content": user_message})
 
-    response = client.messages.create(
-        model="claude-opus-4-6",
-        max_tokens=1024,
-        system=SYSTEM_PROMPT,
-        messages=messages,
-    )
-
-    reply = response.content[0].text
-    return jsonify({"reply": reply})
+    try:
+        response = client.messages.create(
+            model="claude-opus-4-6",
+            max_tokens=1024,
+            system=SYSTEM_PROMPT,
+            messages=messages,
+        )
+        reply = response.content[0].text
+        return jsonify({"reply": reply})
+    except Exception as e:
+        print(f"APIエラー: {e}")
+        return jsonify({"error": f"APIエラー: {str(e)}"}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
