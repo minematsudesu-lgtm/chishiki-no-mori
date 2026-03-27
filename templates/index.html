@@ -214,6 +214,36 @@
     #send-btn:active { transform: scale(0.95); }
     #send-btn:disabled { background: #a5d6a7; cursor: default; transform: none; }
 
+    #mic-btn {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: #fff;
+      color: #388e3c;
+      border: 2px solid #a5d6a7;
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    #mic-btn:hover { background: #e8f5e9; border-color: #388e3c; }
+    #mic-btn.recording {
+      background: #ffebee;
+      border-color: #e53935;
+      color: #e53935;
+      animation: pulse 1s infinite;
+    }
+    #mic-btn:disabled { opacity: 0.4; cursor: default; }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
     .welcome {
       text-align: center;
       color: #66bb6a;
@@ -255,6 +285,7 @@
 
   <div id="input-area">
     <textarea id="user-input" rows="1" placeholder="質問を入力してね…" maxlength="500"></textarea>
+    <button id="mic-btn" onclick="toggleMic()" title="音声入力">🎤</button>
     <button id="send-btn" onclick="sendMessage()" title="送信">➤</button>
   </div>
 </div>
@@ -333,6 +364,55 @@
   function removeTyping() {
     const t = document.getElementById('typing-indicator');
     if (t) t.remove();
+  }
+
+  // 音声入力
+  const micBtn = document.getElementById('mic-btn');
+  let recognition = null;
+  let isRecording = false;
+
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = 'ja-JP';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onresult = (e) => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+      inputEl.value = transcript;
+      inputEl.style.height = 'auto';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+    };
+
+    recognition.onend = () => {
+      isRecording = false;
+      micBtn.classList.remove('recording');
+      micBtn.textContent = '🎤';
+      if (inputEl.value.trim()) sendMessage();
+    };
+
+    recognition.onerror = () => {
+      isRecording = false;
+      micBtn.classList.remove('recording');
+      micBtn.textContent = '🎤';
+    };
+  } else {
+    micBtn.disabled = true;
+    micBtn.title = 'このブラウザは音声入力に対応していません';
+  }
+
+  function toggleMic() {
+    if (!recognition) return;
+    if (isRecording) {
+      recognition.stop();
+    } else {
+      inputEl.value = '';
+      recognition.start();
+      isRecording = true;
+      micBtn.classList.add('recording');
+      micBtn.textContent = '⏹️';
+    }
   }
 
   async function sendMessage() {
