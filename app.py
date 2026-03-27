@@ -57,9 +57,16 @@ def chat():
         )
         reply = response.content[0].text
         return jsonify({"reply": reply})
+    except anthropic.RateLimitError:
+        return jsonify({"error": "🌳 ただいま森が混んでいるよ！少し待ってからもう一度聞いてみてね。"}), 429
+    except anthropic.APIStatusError as e:
+        if e.status_code == 529:
+            return jsonify({"error": "🌳 ただいま森が混んでいるよ！少し待ってからもう一度聞いてみてね。"}), 529
+        print(f"APIエラー: {e}")
+        return jsonify({"error": "🌳 森の妖精が少しお休み中だよ。もう一度試してみてね！"}), 500
     except Exception as e:
         print(f"APIエラー: {e}")
-        return jsonify({"error": f"APIエラー: {str(e)}"}), 500
+        return jsonify({"error": "🌳 森の妖精が少しお休み中だよ。もう一度試してみてね！"}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
